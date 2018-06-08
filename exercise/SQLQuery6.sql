@@ -455,3 +455,34 @@ select * from sales with(xlock)
  drop index cin on emp2
  create clustered index cin on emp2(name)
  select * from emp2
+
+
+
+ alter database b88  set recovery bulk_logged
+
+ --fullbackup 
+ backup database b88 to disk ='c:\Bak\B88_full.bak'
+ --differentail backup
+ backup database b88 to disk='c:\bak\B88_diff.dif'
+ --transaction
+backup database b88 to disk='c:\bak\b88_tlb.trn'
+-- job agents 
+create database test_encoding
+
+
+--isoloation 
+-- related with the currency control 
+
+--read uncommited low
+--read commited  default
+--repeatable read
+--serializable high
+--snapshot 
+--locks  to make sure data consistancy
+--share lock read operation only (select) row level lock
+-- xlock exclusive  lock  any modify operations 
+--update lock ulock result deadlock
+--intent share  wait to get next share lock a kind of ticket
+--intent exclusive
+--intent update
+--lock part finished by database engine  step3 
