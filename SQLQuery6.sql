@@ -8,7 +8,27 @@ go
 --covering index
 --filter index 
 --full text index 
+SELECT name AS FileName, 
+   size*1.0/128 AS FileSizeinMB,
+   CASE max_size 
+       WHEN 0 THEN 'Autogrowth is off.'
+       WHEN -1 THEN 'Autogrowth is on.'
+       ELSE 'Log file grows to a maximum size of 2 TB.'
+   END,
+   growth AS 'GrowthValue',
+   'GrowthIncrement' = 
+       CASE
+           WHEN growth = 0 THEN 'Size is fixed.'
+           WHEN growth > 0 AND is_percent_growth = 0 
+               THEN 'Growth value is in 8-KB pages.'
+           ELSE 'Growth value is a percentage.'
+       END
+FROM tempdb.sys.database_files;
+GO
 
+SELECT SUM(unallocated_extent_page_count) AS [free pages], 
+ (SUM(unallocated_extent_page_count)*1.0/128) AS [free space in MB]
+FROM sys.dm_db_file_space_usage;
 
 -- index views
 
@@ -142,7 +162,7 @@ OPTION (OPTIMIZE FOR (@ProductID=945))
 --3  
 
 DBCC SHOW_STATISTICS ("Person.Address", AK_Address_rowguid)  WITH HISTOGRAM  
- DBCC CHECKTABLE ('HumanResources.Employee')
+ DBCC CHECKTABLE ('pp')
 
  dbcc  checktable(emp2)
  dbcc checktable(he)
@@ -241,7 +261,8 @@ dbcc  showcontig('pp','idx2')
  ALTER index all  on he   
  rebuild with (fillfactor=80,pad_index=on,sort_in_tempdb=on,online=on) 
 
-alter index idx1 on pp disable
+alter index idx1 on pp disabled
+DBCC DBREINDEX (pp, idx1)
 --dmv dmf 
 --master resource tempdb  model msdb 
 
@@ -285,11 +306,152 @@ inner join sys.types sty
 on sc.system_type_id=sty.system_type_id
 where st.name='pp'
  
- 
+
+select * from  [LAPTOP-8HF2VF6N].B88.dbo.he
  --  
 EXEC sp_depends  N'Sales.Customer'  
 sp_helptext sp_depends
+-- partitions 
+go
+-- step 1 create partition function
+create partition function pf(int) as 
+
+range left for values(50,100,150,200)
+
+--create filegroup 
+ alter database b88
+	add filegroup filegroup1 
+ alter database b88
+	add filegroup filegroup2
+ alter database b88
+	add filegroup filegroup3 
+ alter database b88
+	add filegroup filegroup4 
+ alter database b88
+	add filegroup filegroup5 
+
+alter database b88 
+add file (Name=FG1_dat,filename="C:\Part\fg1.ndf",size=30mb,maxsize=50mb,filegrowth=5mb) to filegroup filegroup1
+
+alter database b88 
+add file (Name=FG2_dat,filename="C:\Part\fg2.ndf",size=30mb,maxsize=50mb,filegrowth=5mb) to filegroup filegroup2
+
+alter database b88 
+add file (Name=FG3_dat,filename="C:\Part\fg3.ndf",size=30mb,maxsize=50mb,filegrowth=5mb) to filegroup filegroup3
+
+alter database b88 
+add file (Name=FG4_dat,filename="C:\Part\fg4.ndf",size=30mb,maxsize=50mb,filegrowth=5mb) to filegroup filegroup4
+
+alter database b88 
+add file (Name=FG5_dat,filename="C:\Part\fg5.ndf",size=30mb,maxsize=50mb,filegrowth=5mb) to filegroup filegroup5
+ 
+
+--scheme
+create partition scheme ps
+as
+partition pf to (filegroup1,filegroup2,filegroup3,filegroup4,filegroup5)
+
+create table pt (
+id int identity(1,1),
+name varchar(50)
+)on ps(id)
+
+insert into pt values('peter')
+go 500
+
+--drop table
+  drop table pt
+--drop scheme
+drop partition scheme ps
+--drop function
+drop partition function pf 
+
+
+alter database b88
+remove file FG1_dat
+alter database b88
+remove file FG2_dat
+alter database b88
+remove file FG3_dat
+alter database b88
+remove file FG4_dat
+alter database b88
+remove file FG5_dat
+
+
+alter database b88
+remove filegroup filegroup1
+
+alter database b88
+remove filegroup filegroup2
+
+alter database b88
+remove filegroup filegroup3
+
+alter database b88
+remove filegroup filegroup4
+
+alter database b88
+remove filegroup filegroup5
+
+ select st.name,sp.partition_number,sp.rows
+ from sys.tables st
+ inner join sys.partitions sp
+ on st.object_id=sp.object_id
+ where st.name='pt'
+
+
+ select * from pt 
+ where  name='peter'
+  select * from pt1 
+ where   name ='peter'
+
+ create unique clustered index uci on pt(id)
+ drop index uci on pt
+  create   clustered index uci on pt(name)
+ select * into pt1 from pt
+
+
+ merge and split partitons 
 
 
 
-  
+ alter partition function pf()
+ merge range(150)
+
+ alter partition function pf()
+ split range(150)
+
+
+ drop index idx1_p on pp
+ go
+
+ create clustered index idx1_p on pp(businessentityid) WITH(DROP_EXISTING = ON) on ps(businessentityid) ---???
+
+
+ 
+
+ 
+ select * from sales s inner  loop join client c
+ on s.sid=c.sid
+
+select * from sales with(nolock)
+
+select * from sales with(xlock)
+
+
+ use b88
+ go
+
+ select  * from pp 
+ with(index(idx2))
+ inner join he
+ on pp.BusinessEntityID=he.BusinessEntityID
+
+ select * from emp2
+
+ create clustered index cin on emp2(mid)
+ insert into  emp2 values(5,null,12)
+ drop index cin on emp2
+ create clustered index cin on emp2(name)
+ select * from emp2
