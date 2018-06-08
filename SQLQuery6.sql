@@ -286,8 +286,9 @@ on sc.system_type_id=sty.system_type_id
 where st.name='pp'
  
  
-
-
+ --  
+EXEC sp_depends  N'Sales.Customer'  
+sp_helptext sp_depends
 
 
 
