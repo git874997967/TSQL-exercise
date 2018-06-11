@@ -161,7 +161,7 @@ OPTION (OPTIMIZE FOR (@ProductID=945))
 --2 recompile
 --3  
 
-DBCC SHOW_STATISTICS ("Person.Address", AK_Address_rowguid)  WITH HISTOGRAM  
+DBCC SHOW_STATISTICS ("adventureworks2012.Person.Address", AK_Address_rowguid)  WITH HISTOGRAM  
  DBCC CHECKTABLE ('pp')
 
  dbcc  checktable(emp2)
@@ -239,7 +239,7 @@ select name from t9  where name='peter'
  create unique clustered index idx_sbv_pp on sbv_pp(rowguid)
 
  
- select firstname,ModifiedDate,rowguid from pp where   year(ModifiedDate)>2002 
+ select firstname,ModifiedDate,rowguid from pp where   rowguid='92C4279F-1207-48A3-8448-4636514EB7E2'--   year(ModifiedDate)>2002 
 
 
  select firstname,ModifiedDate,rowguid from sbv_pp      
@@ -256,7 +256,7 @@ select name from t9  where name='peter'
  from sys.dm_db_index_physical_stats(db_id('B88'),OBJECT_ID('pp'),object_id('idx3'),null,'detailed')
 
 dbcc  showcontig('pp','idx3')
-dbcc  showcontig('pp','idx1')
+dbcc  showcontig('pp','idx1_p')
 dbcc  showcontig('pp','idx2') 
  ALTER index all  on he   
  rebuild with (fillfactor=80,pad_index=on,sort_in_tempdb=on,online=on) 
@@ -265,7 +265,10 @@ alter index idx1 on pp disabled
 DBCC DBREINDEX (pp, idx1)
 --dmv dmf 
 --master resource tempdb  model msdb 
-
+ 
+	select @@DATEFIRST
+	select @@language
+	select @@CPU_BUSY
 
 select * from sys.columns
 select * from sys.all_views
@@ -422,8 +425,13 @@ remove filegroup filegroup5
  alter partition function pf()
  split range(150)
 
+ alter table pp
+ add constraint pk_pp_bid primary key  (businessentityid)
 
- drop index idx1_p on pp
+ create clustered index idx1_p on pp(businessentityid) 
+
+ drop index pk_pp_bid on pp
+
  go
 
  create clustered index idx1_p on pp(businessentityid) WITH(DROP_EXISTING = ON) on ps(businessentityid) ---???
@@ -477,7 +485,7 @@ create database test_encoding
 --read commited  default
 --repeatable read
 --serializable high
---snapshot 
+--snapshot  
 --locks  to make sure data consistancy
 --share lock read operation only (select) row level lock
 -- xlock exclusive  lock  any modify operations 
@@ -486,3 +494,96 @@ create database test_encoding
 --intent exclusive
 --intent update
 --lock part finished by database engine  step3 
+
+--dat inconsisiteny provlem
+--dirty  reads
+-- read during modify
+--non repeatable read
+--
+--phantom read 
+----read uncommitted 
+-- user1 
+dbcc useroptions
+
+use Test_DB
+go
+
+--dirty read
+begin tran 
+	update stock set pname='bike'
+		waitfor delay '00:00:10'
+rollback
+
+--non repeatable read
+
+update stock set pname='bike' where pid=100
+
+--phantom read
+set showplan_text on
+insert into stock 
+values(104,'car',40,5000)
+
+select * from stock
+
+begin tran
+select * from stock
+waitfor delay '00:00:10'
+select * from stock
+commit
+
+alter database test_db
+set allow_snapshot_isolation on
+
+
+--repeated read
+
+--serializable
+set transaction isolation level   read committed
+
+begin tran
+select * from stock  
+waitfor delay '00:00:10'
+update stock set pname='perfume' where pid=102
+commit
+dbcc useroptions
+
+begin tran
+select * from stock
+waitfor delay '00:00:10'
+update stock set pname='perfume' where pid=102
+commit
+
+use b88
+go
+
+ create   view VE3 with schemabinding    as
+ select emp2.* from emp2
+ 
+ dbcc  checkident(emp2)
+
+ select * from emp2   where eid <5
+
+ union 
+ select * from emp2  where eid>10
+	
+SELECT conn.session_id, host_name, program_name,
+    nt_domain, login_name, connect_time, last_request_end_time 
+FROM sys.dm_exec_sessions AS sess
+JOIN sys.dm_exec_connections AS conn
+   ON sess.session_id = conn.session_id
+
+
+
+   set showplan_text   off
+   select  case   
+   when eid =8 then 'boss'
+   when mid=5 then 'emp'
+   end as level ,*
+    from emp2
+
+	dbcc checkdb('b88')
+	DBCC CHECKALLOC
+	dbcc checkconstraints('sale2')
+
+
+
