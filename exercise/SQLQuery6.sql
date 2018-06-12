@@ -584,6 +584,62 @@ JOIN sys.dm_exec_connections AS conn
 	dbcc checkdb('b88')
 	DBCC CHECKALLOC
 	dbcc checkconstraints('sale2')
+---  sql profiler and DTA 
 
+insert into pp(BusinessEntityID,ModifiedDate,rowguid) values(0001,GETDATE(),'peter',)
+go 100000
+select BusinessEntityID  from pp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--login & users
+create login [mytestlogin] with password ='changeme'
+Must_change,Check_expiration=on,default_database=[b88]
+
+create user test_mc_test for login mytestlogin
+
+--diff login user
+
+ 
+--login for server level    user for database level 
+--login must be mapped to a user   
+-- user may without login
+--one login with multi users   single may not multi login
+-- login for instance level security principle    user for database level security
+
+-- new features  2012
+
+SELECT MAX(login_time) AS [Last Login Time], login_name [Login]
+FROM sys.dm_exec_sessions
+GROUP BY login_name;
+
+ select * from sys.dm_exec_sessions 
+ select * from sys.dm_exec_connections
+
+
+SELECT DATABASEPROPERTYEX('master', 'Status')
+GO
 
 
