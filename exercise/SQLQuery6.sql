@@ -470,6 +470,7 @@ select * from sales with(xlock)
 
  --fullbackup 
  backup database b88 to disk ='c:\Bak\B88_full.bak'
+
  --differentail backup
  backup database b88 to disk='c:\bak\B88_diff.dif'
  --transaction
@@ -586,40 +587,25 @@ JOIN sys.dm_exec_connections AS conn
 	dbcc checkconstraints('sale2')
 ---  sql profiler and DTA 
 
-insert into pp(BusinessEntityID,ModifiedDate,rowguid) values(0001,GETDATE(),'peter',)
-go 100000
+ 
 select BusinessEntityID  from pp
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 --login & users
+-- windows auth ho
+--sqlserver auth
 create login [mytestlogin] with password ='changeme'
 Must_change,Check_expiration=on,default_database=[b88]
 
 create user test_mc_test for login mytestlogin
 
+
+--example  create new user and can access certain cols in certain table  and dql  only 
+--create window account and map to sqlserver 
+--in security folder and map the role(one of nine roles)
+--have to restart
+--create user  in certain dababase
+--secruables the certain database
+--create constraint on views are better to protect the origin table and could be reuse for other users.
 --diff login user
 
  
@@ -628,6 +614,7 @@ create user test_mc_test for login mytestlogin
 -- user may without login
 --one login with multi users   single may not multi login
 -- login for instance level security principle    user for database level security
+--
 
 -- new features  2012
 
@@ -641,5 +628,5 @@ GROUP BY login_name;
 
 SELECT DATABASEPROPERTYEX('master', 'Status')
 GO
-
+---
 
